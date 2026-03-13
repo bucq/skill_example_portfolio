@@ -9,14 +9,6 @@ https://bucq.github.io/skill_example_portfolio/
 ```
 
 
-## GitHub Pages への公開手順
-
-1. このリポジトリを GitHub にプッシュします。
-2. リポジトリの **Settings** → **Pages** を開きます。
-3. **Source** を `Deploy from a branch` に設定します。
-4. **Branch** を `main`（または `master`）、フォルダを `/ (root)` に設定して **Save** します。
-5. 数分後、上記 URL でサイトが公開されます。
-
 ## ファイル構成
 
 ```
