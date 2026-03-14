@@ -282,5 +282,214 @@
   <a href="index-redesigned.html" class="design-toggle">
     <span class="dot"></span> Redesigned に切替
   </a>
+
+  <!-- First-visit tutorial -->
+  <style>
+    /* Overlay */
+    #tut-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(3px);
+      animation: tutFadeIn .4s ease forwards;
+    }
+    /* Spotlight cutout around the toggle button */
+    #tut-overlay::before {
+      content: '';
+      position: absolute;
+      bottom: 1.35rem; right: 1.35rem;
+      width: 196px; height: 44px;
+      border-radius: 0;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.72), 0 0 0 1px rgba(0,245,228,0.5), 0 0 16px rgba(0,245,228,0.2);
+      pointer-events: none;
+    }
+    /* Card */
+    #tut-card {
+      position: fixed;
+      bottom: 7.2rem; right: 2rem;
+      z-index: 10001;
+      width: 290px;
+      background: #0a0a14;
+      border: 1px solid rgba(0,245,228,0.3);
+      box-shadow: 0 0 24px rgba(0,245,228,0.08), 0 16px 40px rgba(0,0,0,0.6);
+      padding: 1.25rem 1.25rem 1rem;
+      font-family: 'Courier New', monospace;
+      animation: tutSlideUp .45s cubic-bezier(.22,1,.36,1) .15s both;
+    }
+    /* Arrow pointing down to button */
+    #tut-card::after {
+      content: '';
+      position: absolute;
+      bottom: -7px; right: 2rem;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 7px solid rgba(0,245,228,0.3);
+    }
+    /* Steps */
+    .tut-step { display: none; }
+    .tut-step.active { display: block; }
+    .tut-step-num {
+      font-size: 0.58rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(0,245,228,0.5);
+      margin-bottom: 0.6rem;
+    }
+    .tut-step-num::before { content: '// '; }
+    .tut-step-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #00f5e4;
+      text-shadow: 0 0 8px rgba(0,245,228,0.4);
+      margin-bottom: 0.6rem;
+      line-height: 1.4;
+      letter-spacing: 0.04em;
+    }
+    .tut-step-body {
+      font-size: 0.76rem;
+      color: rgba(200,220,230,0.75);
+      line-height: 1.75;
+      letter-spacing: 0.02em;
+    }
+    .tut-step-body strong { color: #fff; font-weight: 700; }
+    /* Dots */
+    .tut-dots {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin: 1.1rem 0 0.9rem;
+    }
+    .tut-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(0,245,228,0.2);
+      transition: background .2s, box-shadow .2s, transform .2s;
+    }
+    .tut-dot.active {
+      background: #00f5e4;
+      box-shadow: 0 0 6px #00f5e4;
+      transform: scale(1.4);
+    }
+    /* Buttons */
+    .tut-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(0,245,228,0.12);
+      padding-top: 0.85rem;
+      margin-top: 0.25rem;
+    }
+    .tut-skip {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(0,245,228,0.35);
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color .2s;
+    }
+    .tut-skip:hover { color: rgba(0,245,228,0.7); }
+    .tut-next {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #0a0a14;
+      background: #00f5e4;
+      border: none;
+      padding: 0.45rem 1rem;
+      cursor: pointer;
+      transition: box-shadow .2s, opacity .2s;
+    }
+    .tut-next:hover { box-shadow: 0 0 14px rgba(0,245,228,0.5); opacity: 0.9; }
+
+    /* Fade-out */
+    #tut-overlay.tut-out,
+    #tut-card.tut-out {
+      animation: tutFadeOut .3s ease forwards;
+    }
+    @keyframes tutFadeIn  { from { opacity:0; } to { opacity:1; } }
+    @keyframes tutFadeOut { from { opacity:1; } to { opacity:0; } }
+    @keyframes tutSlideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+  </style>
+
+  <script>
+    (function() {
+      if (localStorage.getItem('tut_seen')) return;
+
+      const STEPS = [
+        {
+          title: 'デザインの切替',
+          body:  '<strong>「Redesigned に切替」</strong> ボタンをクリックすると、front-design Skill で生成したリデザイン版に切り替わります。',
+        },
+        // {
+        //   title: '切り替えて比べてみよう',
+        //   body:  'いつでもボタンで行き来できます。それではお楽しみください！',
+        // },
+      ];
+
+      let current = 0;
+
+      // Build overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'tut-overlay';
+      document.body.appendChild(overlay);
+
+      // Build card
+      const card = document.createElement('div');
+      card.id = 'tut-card';
+      card.innerHTML = `
+        <div class="tut-steps"></div>
+        <div class="tut-dots"></div>
+        <div class="tut-actions">
+          <button class="tut-skip">スキップ</button>
+          <button class="tut-next">次へ →</button>
+        </div>`;
+      document.body.appendChild(card);
+
+      const stepsEl  = card.querySelector('.tut-steps');
+      const dotsEl   = card.querySelector('.tut-dots');
+      const nextBtn  = card.querySelector('.tut-next');
+      const skipBtn  = card.querySelector('.tut-skip');
+
+      // Render steps
+      STEPS.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'tut-step' + (i === 0 ? ' active' : '');
+        div.innerHTML = `<p class="tut-step-num">STEP ${i + 1} / ${STEPS.length}</p>
+          <h3 class="tut-step-title">${s.title}</h3>
+          <p class="tut-step-body">${s.body}</p>`;
+        stepsEl.appendChild(div);
+
+        const dot = document.createElement('span');
+        dot.className = 'tut-dot' + (i === 0 ? ' active' : '');
+        dotsEl.appendChild(dot);
+      });
+
+      function goTo(idx) {
+        stepsEl.querySelectorAll('.tut-step').forEach((el, i) => el.classList.toggle('active', i === idx));
+        dotsEl.querySelectorAll('.tut-dot').forEach((el, i) => el.classList.toggle('active', i === idx));
+        nextBtn.textContent = idx === STEPS.length - 1 ? '閉じる ✓' : '次へ →';
+      }
+
+      function dismiss() {
+        overlay.classList.add('tut-out');
+        card.classList.add('tut-out');
+        setTimeout(() => { overlay.remove(); card.remove(); }, 300);
+        localStorage.setItem('tut_seen', '1');
+      }
+
+      nextBtn.addEventListener('click', () => {
+        current++;
+        if (current >= STEPS.length) { dismiss(); return; }
+        goTo(current);
+      });
+      skipBtn.addEventListener('click', dismiss);
+      overlay.addEventListener('click', dismiss);
+    })();
+  </script>
 </body>
 </html>
